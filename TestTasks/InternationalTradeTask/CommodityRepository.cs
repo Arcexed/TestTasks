@@ -7,36 +7,83 @@ namespace TestTasks.InternationalTradeTask
 {
     internal class CommodityRepository
     {
-        public double? GetImportTariff(string commodityName)
+
+        private double? RecursiveImport(ICommodityGroup obj, string name)
         {
-            foreach (var comodityGroup in _allCommodityGroups)
+
+            foreach (var item in obj.SubGroups)
             {
-                foreach (var subgroups in comodityGroup.SubGroups)
+                if (item.Name == name)
                 {
-
-                    foreach (var subgroup in subgroups.SubGroups)
+                    if (item.ImportTarif != null)
                     {
-                        foreach (var subgroupss in subgroup.SubGroups)
-                        {
-
-                        }
+                        return item.ImportTarif;
+                    }
+                    else
+                    {
+                        return obj.ImportTarif;
                     }
                 }
+                else if (item.SubGroups?.Any() ?? false)
+                {
+                    return RecursiveImport(item, name);
+                }
             }
-            //foreach (var comodity in _allCommodityGroups)
-            //{
-            //    var subgroup = comodity.SubGroups;
-            //    return subgroup.Where(s => s.Name== commodityName).FirstOrDefault().ImportTarif;
+            return -1;
+        }
+        private double? RecursiveExport(ICommodityGroup obj, string name)
+        {
 
-            //}
-            //_allCommodityGroups.Where(g => g.SubGroups => s )
-            return 0;
+            foreach (var item in obj.SubGroups)
+            {
+                if (item.Name == name)
+                {
+                    if (item.ExportTarif != null)
+                    {
+                        return item.ExportTarif;
+                    }
+                    else
+                    {
+                        return obj.ExportTarif;
+                    }
+                }
+                else if (item.SubGroups?.Any() ?? false)
+                {
+                    return RecursiveExport(item, name);
+                }
+            }
+            return -1;
+        }
+
+
+        public double? GetImportTariff(string commodityName)
+        {
+            foreach (var item in _allCommodityGroups)
+            {
+                var res = RecursiveImport(item, commodityName);
+                if (res != -1)
+                    return res;
+
+                continue;
+            }
+
+            throw new ArgumentException("Not Found Commodity");
         }
 
         public double? GetExportTariff(string commodityName)
         {
-            throw new NotImplementedException();
+
+            foreach (var item in _allCommodityGroups)
+            {
+                var res = RecursiveExport(item, commodityName);
+                if (res != -1)
+                    return res;
+
+                continue;
+            }
+            throw new ArgumentException("Not Found Commodity");
         }
+
 
         private FullySpecifiedCommodityGroup[] _allCommodityGroups = new FullySpecifiedCommodityGroup[]
         {
